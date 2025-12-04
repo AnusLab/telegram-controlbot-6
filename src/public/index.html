@@ -3,31 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TMDB Filmsuche</title>
+    <title>Media Suche</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🎬 Filmsuche</h1>
-            <p class="subtitle">Durchsuche Millionen von Filmen</p>
-        </header>
-
-        <div class="search-container">
-            <div class="search-box">
-                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.35-4.35"></path>
-                </svg>
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="Film suchen..." 
-                    autocomplete="off"
-                >
+        <!-- Media Type Selection -->
+        <div id="mediaTypeSelection" class="media-type-selection">
+            <header>
+                <h1>🎬 Media Suche</h1>
+                <p class="subtitle">Was möchtest du suchen?</p>
+            </header>
+            
+            <div class="type-buttons">
+                <button class="type-button" onclick="selectMediaType('movie')">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                        <polyline points="17 2 12 7 7 2"></polyline>
+                    </svg>
+                    <h2>Filme</h2>
+                    <p>Durchsuche Filme</p>
+                </button>
+                
+                <button class="type-button" onclick="selectMediaType('tv')">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                        <line x1="17" y1="2" x2="17" y2="7"></line>
+                        <line x1="7" y1="2" x2="7" y2="7"></line>
+                    </svg>
+                    <h2>Serien</h2>
+                    <p>Durchsuche TV-Serien</p>
+                </button>
             </div>
         </div>
+
+        <!-- Search View -->
+        <div id="searchView" class="search-view hidden">
+            <header>
+                <button class="back-button" onclick="backToSelection()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <div>
+                    <h1 id="searchTitle">🎬 Filme</h1>
+                    <p class="subtitle" id="searchSubtitle">Durchsuche Millionen von Filmen</p>
+                </div>
+            </header>
+
+            <div class="search-container">
+                <div class="search-box">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Suchen..." 
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
 
         <div id="loading" class="loading hidden">
             <div class="spinner"></div>
@@ -45,13 +83,14 @@
             <small>Versuche es mit einem anderen Suchbegriff</small>
         </div>
 
-        <div id="welcome" class="welcome">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                <polyline points="17 2 12 7 7 2"></polyline>
-            </svg>
-            <h2>Willkommen!</h2>
-            <p>Suche nach deinen Lieblingsfilmen</p>
+            <div id="welcome" class="welcome">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                    <polyline points="17 2 12 7 7 2"></polyline>
+                </svg>
+                <h2>Willkommen!</h2>
+                <p id="welcomeText">Suche nach deinen Lieblingsfilmen</p>
+            </div>
         </div>
     </div>
 

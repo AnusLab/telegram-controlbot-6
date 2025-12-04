@@ -24,11 +24,84 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API endpoint to get TMDB API key (for frontend)
+// API endpoint to get config (for frontend)
 app.get('/api/config', (req, res) => {
   res.json({
-    tmdbApiKey: process.env.TMDB_API_KEY
+    tmdbApiKey: process.env.TMDB_API_KEY,
+    jellyseerrUrl: process.env.JELLYSEERR_URL
   });
+});
+
+// API endpoint to check media availability in Jellyseerr
+app.get('/api/jellyseerr/check/:mediaType/:tmdbId', async (req, res) => {
+  const { mediaType, tmdbId } = req.params;
+  
+  if (!process.env.JELLYSEERR_URL || !process.env.JELLYSEERR_API_KEY) {
+    return res.json({ available: false, error: 'Jellyseerr not configured' });
+  }
+  
+  try {
+    const response = await fetch(
+      `${process.env.JELLYSEERR_URL}/api/v1/${mediaType}/${tmdbId}`,
+      {
+        headers: {
+          'X-Api-Key': process.env.JELLYSEERR_API_KEY
+        }
+      }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      res.json({
+        available: data.mediaInfo?.status === 5 || data.mediaInfo?.status === 4,
+        status: data.mediaInfo?.status,
+        requested: data.mediaInfo?.status === 3 || data.mediaInfo?.status === 2,
+        mediaInfo: data.mediaInfo
+      });
+    } else {
+      res.json({ available: false, requested: false });
+    }
+  } catch (error) {
+    console.error('Jellyseerr check error:', error);
+    res.json({ available: false, error: error.message });
+  }
+});
+
+// API endpoint to request media in Jellyseerr
+app.post('/api/jellyseerr/request', async (req, res) => {
+  const { mediaType, tmdbId, title } = req.body;
+  
+  if (!process.env.JELLYSEERR_URL || !process.env.JELLYSEERR_API_KEY) {
+    return res.status(500).json({ success: false, error: 'Jellyseerr not configured' });
+  }
+  
+  try {
+    const response = await fetch(
+      `${process.env.JELLYSEERR_URL}/api/v1/request`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Api-Key': process.env.JELLYSEERR_API_KEY
+        },
+        body: JSON.stringify({
+          mediaType: mediaType === 'movie' ? 'movie' : 'tv',
+          mediaId: parseInt(tmdbId)
+        })
+      }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      res.json({ success: true, data });
+    } else {
+      const error = await response.text();
+      res.status(response.status).json({ success: false, error });
+    }
+  } catch (error) {
+    console.error('Jellyseerr request error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Serve index.html for all routes (except webhook)
