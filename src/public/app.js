@@ -635,7 +635,9 @@ window.requestMediaFromDetail = async function(tmdbId, mediaType, title) {
             `;
             
             if (tg) {
-                tg.showAlert(`"${title}" wurde erfolgreich angefragt!`);
+                tg.showAlert(`Erfolgreich angefragt! Wenn das Medium für uns verfügbar ist, wird es in den nächsten 10 Minuten im IPTV verfügbar sein.`);
+            } else {
+                alert(`Erfolgreich angefragt! Wenn das Medium für uns verfügbar ist, wird es in den nächsten 10 Minuten im IPTV verfügbar sein.`);
             }
             
             setTimeout(() => {
