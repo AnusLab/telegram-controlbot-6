@@ -145,8 +145,18 @@ export async function upsertUser(userData) {
         exp_date = VALUES(exp_date),
         status = VALUES(status),
         updated_at = CURRENT_TIMESTAMP`,
-      [username, password, email, role || 'user', telegram_name, telegram_user_id, 
-       credits, resetDate, exp_date, status || 'Active']
+      [
+        username, 
+        password, 
+        email || null, 
+        role || 'user', 
+        telegram_name || null, 
+        telegram_user_id || null, 
+        credits, 
+        resetDate, 
+        exp_date || null, 
+        status || 'Active'
+      ]
     );
     
     return result;

@@ -59,40 +59,40 @@ app.post('/api/auth/login', async (req, res) => {
   }
   
   try {
+    console.log('Login attempt for username:', username);
+    
     // Authenticate with external API
     const authResult = await authenticateWithExternalAPI(username, password);
     
     if (!authResult.success) {
+      console.error('External API auth failed:', authResult.error);
       await logLoginAttempt(username, ipAddress, false);
       return res.status(401).json({ success: false, error: authResult.error });
     }
     
+    console.log('External API auth successful, upserting user...');
+    
     // Check or create user in database
     let user = await getUserByUsername(username);
     
-    if (!user) {
-      // Create new user
-      await upsertUser({
-        username: authResult.userInfo.username,
-        password: authResult.userInfo.password,
-        email: email,
-        exp_date: authResult.userInfo.exp_date,
-        status: authResult.userInfo.status,
-        role: 'user' // Default role
-      });
-      user = await getUserByUsername(username);
-    } else {
-      // Update existing user
-      await upsertUser({
-        username: authResult.userInfo.username,
-        password: authResult.userInfo.password,
-        email: email,
-        exp_date: authResult.userInfo.exp_date,
-        status: authResult.userInfo.status,
-        role: user.role // Keep existing role
-      });
-      user = await getUserByUsername(username);
-    }
+    const userDataToUpsert = {
+      username: authResult.userInfo.username,
+      password: authResult.userInfo.password,
+      email: email,
+      exp_date: authResult.userInfo.exp_date,
+      status: authResult.userInfo.status,
+      role: user ? user.role : 'user',
+      telegram_name: null,
+      telegram_user_id: null
+    };
+    
+    console.log('Upserting user with data:', userDataToUpsert);
+    
+    await upsertUser(userDataToUpsert);
+    
+    // Reload user from database
+    user = await getUserByUsername(username);
+    console.log('User loaded from database:', user ? 'Success' : 'Failed');
     
     // Log successful login
     await logLoginAttempt(username, ipAddress, true);

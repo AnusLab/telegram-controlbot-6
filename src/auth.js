@@ -5,20 +5,26 @@ export async function authenticateWithExternalAPI(username, password) {
   try {
     const apiUrl = `http://xfast.online:8080/panel_api.php?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
     
+    console.log('Authenticating with external API:', apiUrl);
+    
     const response = await fetch(apiUrl);
     
     if (!response.ok) {
+      console.error('API request failed with status:', response.status);
       return { success: false, error: 'API request failed' };
     }
     
     const data = await response.json();
+    console.log('API Response:', JSON.stringify(data, null, 2));
     
     // Check if user_info exists
     if (!data.user_info) {
+      console.error('No user_info in API response');
       return { success: false, error: 'Invalid credentials' };
     }
     
     const userInfo = data.user_info;
+    console.log('User Info:', userInfo);
     
     // Check if status is Active
     if (userInfo.status !== 'Active') {
