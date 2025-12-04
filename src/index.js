@@ -9,6 +9,13 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Validate required environment variables
+if (!process.env.BOT_TOKEN) {
+  console.error('❌ FEHLER: BOT_TOKEN ist nicht gesetzt!');
+  console.error('Bitte setze die Umgebungsvariable BOT_TOKEN in deinem Heroku Control Panel.');
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -80,23 +87,31 @@ bot.catch((err, ctx) => {
 
 app.listen(PORT, async () => {
   console.log(`🌐 Web-Server läuft auf Port ${PORT}`);
+  console.log(`📋 Umgebungsvariablen Check:`);
+  console.log(`   - BOT_TOKEN: ${process.env.BOT_TOKEN ? '✅ Gesetzt' : '❌ Fehlt'}`);
+  console.log(`   - TMDB_API_KEY: ${process.env.TMDB_API_KEY ? '✅ Gesetzt' : '❌ Fehlt'}`);
+  console.log(`   - HEROKU_APP_NAME: ${process.env.HEROKU_APP_NAME || '❌ Nicht gesetzt (lokaler Modus)'}`);
+  console.log(`   - WEB_APP_URL: ${process.env.WEB_APP_URL || '❌ Nicht gesetzt'}`);
   
   // Heroku verwendet Webhooks statt Polling
-  if (process.env.HEROKU_APP_NAME) {
+  if (process.env.HEROKU_APP_NAME && process.env.HEROKU_APP_NAME !== 'your-app-name') {
     const webhookUrl = `https://${process.env.HEROKU_APP_NAME}.herokuapp.com/webhook`;
     
     try {
-      // Webhook setzen
+      // Webhook Route ZUERST registrieren
+      app.use(bot.webhookCallback('/webhook'));
+      
+      // Dann Webhook setzen
       await bot.telegram.setWebhook(webhookUrl);
       console.log(`✅ Webhook gesetzt: ${webhookUrl}`);
-      
-      // Webhook Route
-      app.use(bot.webhookCallback('/webhook'));
+      console.log(`✅ Bot läuft im Webhook-Modus`);
     } catch (error) {
       console.error('❌ Fehler beim Setzen des Webhooks:', error);
+      process.exit(1);
     }
   } else {
     // Lokale Entwicklung: Polling verwenden
+    console.log('🔄 Starte Bot im Polling-Modus (lokale Entwicklung)...');
     bot.launch()
       .then(() => {
         console.log('✅ Bot gestartet (Polling-Modus)!');
@@ -104,10 +119,13 @@ app.listen(PORT, async () => {
       })
       .catch((err) => {
         console.error('❌ Fehler beim Starten des Bots:', err);
+        process.exit(1);
       });
   }
 });
 
-// Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+// Enable graceful stop (nur für Polling-Modus)
+if (!process.env.HEROKU_APP_NAME || process.env.HEROKU_APP_NAME === 'your-app-name') {
+  process.once('SIGINT', () => bot.stop('SIGINT'));
+  process.once('SIGTERM', () => bot.stop('SIGTERM'));
+}
