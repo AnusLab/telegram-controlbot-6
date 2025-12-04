@@ -955,23 +955,13 @@ html {
     padding: 20px;
 }
 
-.login-header {
+.login-title {
     text-align: center;
     margin-bottom: 32px;
-}
-
-.login-header svg {
-    color: var(--accent-color);
-    margin-bottom: 16px;
-}
-
-.login-header h1 {
-    font-size: 2rem;
-    margin-bottom: 8px;
-}
-
-.login-header p {
-    color: var(--text-secondary);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.4;
 }
 
 .login-form {

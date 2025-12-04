@@ -37,16 +37,9 @@
         <!-- Login View -->
         <div id="loginView" class="view">
             <div class="login-container">
-                <div class="login-header">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                        <polyline points="17 2 12 7 7 2"></polyline>
-                    </svg>
-                    <h1>Media Library</h1>
-                    <p>Melde dich an um fortzufahren</p>
-                </div>
-                
                 <form id="loginForm" class="login-form">
+                    <h2 class="login-title">Anmelden mit deinen IPTV Line Zugangsdaten</h2>
+                    
                     <div class="form-group">
                         <label for="username">Benutzername</label>
                         <input type="text" id="username" name="username" required autocomplete="username">
@@ -55,6 +48,11 @@
                     <div class="form-group">
                         <label for="password">Passwort</label>
                         <input type="password" id="password" name="password" required autocomplete="current-password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">E-Mail</label>
+                        <input type="email" id="email" name="email" required autocomplete="email">
                     </div>
                     
                     <div id="loginError" class="error-message hidden"></div>
@@ -68,7 +66,7 @@
 
     <div class="container">
         <!-- Home View (Trending) -->
-        <div id="homeView" class="view">
+        <div id="homeView" class="view hidden">
             <header class="view-header">
                 <div class="tab-switcher">
                     <button class="tab active" onclick="switchTab('movie')">Filme</button>

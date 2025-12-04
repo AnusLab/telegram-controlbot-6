@@ -64,6 +64,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
+    const email = document.getElementById('email').value;
     const errorDiv = document.getElementById('loginError');
     const submitButton = e.target.querySelector('button[type="submit"]');
     
@@ -75,7 +76,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
+            body: JSON.stringify({ username, password, email })
         });
         
         const data = await response.json();
@@ -548,6 +549,17 @@ window.closeDetail = function() {
 
 // Request Media from Detail
 window.requestMediaFromDetail = async function(tmdbId, mediaType, title) {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+        if (tg) {
+            tg.showAlert('Bitte melde dich an um Anfragen zu stellen');
+        } else {
+            alert('Bitte melde dich an um Anfragen zu stellen');
+        }
+        showView('login');
+        return;
+    }
+    
     const button = event.target.closest('.request-button');
     const buttonText = button.querySelector('.button-text');
     const originalText = buttonText.textContent;
@@ -570,7 +582,33 @@ window.requestMediaFromDetail = async function(tmdbId, mediaType, title) {
         
         const data = await response.json();
         
+        // Check for auth errors
+        if (response.status === 401 || data.requiresLogin) {
+            if (tg) {
+                tg.showAlert('Bitte melde dich an um Anfragen zu stellen');
+            }
+            showView('login');
+            return;
+        }
+        
+        // Check for credit errors
+        if (data.error && data.error.includes('credits')) {
+            if (tg) {
+                tg.showAlert(data.error);
+            } else {
+                alert(data.error);
+            }
+            button.disabled = false;
+            buttonText.textContent = originalText;
+            return;
+        }
+        
         if (data.success) {
+            // Update credits if available
+            if (data.creditsRemaining !== undefined && currentUser) {
+                currentUser.request_credits = data.creditsRemaining;
+            }
+            
             button.className = 'request-button requested';
             button.innerHTML = `
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

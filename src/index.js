@@ -51,11 +51,11 @@ app.use(session({
 
 // Login endpoint
 app.post('/api/auth/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, email } = req.body;
   const ipAddress = req.ip || req.connection.remoteAddress;
   
-  if (!username || !password) {
-    return res.status(400).json({ success: false, error: 'Username and password required' });
+  if (!username || !password || !email) {
+    return res.status(400).json({ success: false, error: 'Username, password and email required' });
   }
   
   try {
@@ -75,6 +75,7 @@ app.post('/api/auth/login', async (req, res) => {
       await upsertUser({
         username: authResult.userInfo.username,
         password: authResult.userInfo.password,
+        email: email,
         exp_date: authResult.userInfo.exp_date,
         status: authResult.userInfo.status,
         role: 'user' // Default role
@@ -85,6 +86,7 @@ app.post('/api/auth/login', async (req, res) => {
       await upsertUser({
         username: authResult.userInfo.username,
         password: authResult.userInfo.password,
+        email: email,
         exp_date: authResult.userInfo.exp_date,
         status: authResult.userInfo.status,
         role: user.role // Keep existing role
