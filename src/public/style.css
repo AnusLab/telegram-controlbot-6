@@ -2,6 +2,14 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Performance Optimizations */
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 :root {
@@ -305,12 +313,12 @@ header h1 {
     background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-hover) 100%);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 12px 24px;
+    padding: 14px 24px;
     border-radius: 12px;
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     width: 100%;
     position: relative;
     overflow: hidden;
@@ -319,6 +327,11 @@ header h1 {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    will-change: transform;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    min-height: 48px;
 }
 
 .request-button::before {
@@ -329,7 +342,8 @@ header h1 {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
+    transition: left 0.4s ease;
+    pointer-events: none;
 }
 
 .request-button:hover::before {
@@ -342,7 +356,7 @@ header h1 {
 }
 
 .request-button:active {
-    transform: translateY(0);
+    transform: scale(0.98);
 }
 
 .request-button:disabled {
@@ -547,6 +561,7 @@ html {
     padding: 8px 0 max(8px, env(safe-area-inset-bottom));
     z-index: 100;
     box-shadow: 0 -4px 24px var(--glass-shadow);
+    will-change: transform;
 }
 
 .nav-item {
@@ -554,17 +569,26 @@ html {
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    padding: 8px 24px;
+    padding: 12px 24px;
     background: none;
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: color 0.2s ease, transform 0.2s ease;
     border-radius: 12px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    min-height: 48px;
+    min-width: 60px;
+}
+
+.nav-item:active {
+    transform: scale(0.95);
 }
 
 .nav-item svg {
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease;
 }
 
 .nav-item span {
@@ -657,9 +681,17 @@ html {
     border-radius: 16px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     box-shadow: 0 4px 16px var(--glass-shadow);
+    will-change: transform;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.media-card:active {
+    transform: scale(0.98);
 }
 
 .media-card:hover {
@@ -679,11 +711,12 @@ html {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.4s ease;
+    transition: transform 0.3s ease;
+    will-change: transform;
 }
 
 .media-card:hover .media-card-poster img {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 .availability-indicator {
@@ -700,12 +733,16 @@ html {
     -webkit-backdrop-filter: blur(10px);
     border: 2px solid;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    opacity: 1;
+    will-change: background-color, border-color, color;
+    transition: none;
 }
 
 .availability-indicator.loading {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.3);
     color: var(--text-secondary);
+    opacity: 0.6;
 }
 
 .availability-indicator.available {
