@@ -7,15 +7,38 @@ export async function authenticateWithExternalAPI(username, password) {
     
     console.log('Authenticating with external API:', apiUrl);
     
-    const response = await fetch(apiUrl);
+    // Set timeout for fetch request (10 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const response = await fetch(apiUrl, {
+      signal: controller.signal,
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       console.error('API request failed with status:', response.status);
       return { success: false, error: 'API request failed' };
     }
     
-    const data = await response.json();
-    console.log('API Response:', JSON.stringify(data, null, 2));
+    // Stream the response for better performance with large files
+    const text = await response.text();
+    
+    // Only parse the JSON once
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error('Failed to parse API response:', parseError);
+      return { success: false, error: 'Invalid API response format' };
+    }
+    
+    // Only log essential info, not the entire response
+    console.log('API Response received, checking user_info...');
     
     // Check if user_info exists
     if (!data.user_info) {
@@ -24,7 +47,7 @@ export async function authenticateWithExternalAPI(username, password) {
     }
     
     const userInfo = data.user_info;
-    console.log('User Info:', userInfo);
+    console.log('User authenticated:', userInfo.username);
     
     // Check if status is Active
     if (userInfo.status !== 'Active') {
@@ -54,6 +77,12 @@ export async function authenticateWithExternalAPI(username, password) {
     };
   } catch (error) {
     console.error('External API authentication error:', error);
+    
+    // Handle timeout specifically
+    if (error.name === 'AbortError') {
+      return { success: false, error: 'Authentication timeout - please try again' };
+    }
+    
     return { success: false, error: 'Authentication service unavailable' };
   }
 }

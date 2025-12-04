@@ -35,6 +35,23 @@ async function loadConfig() {
 
 // ==================== AUTH FUNCTIONS ====================
 
+// Toggle password visibility
+window.togglePassword = function() {
+    const passwordInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+    const eyeOffIcon = document.getElementById('eyeOffIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.classList.add('hidden');
+        eyeOffIcon.classList.remove('hidden');
+    } else {
+        passwordInput.type = 'password';
+        eyeIcon.classList.remove('hidden');
+        eyeOffIcon.classList.add('hidden');
+    }
+};
+
 // Check authentication on load
 async function checkAuth() {
     try {
