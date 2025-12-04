@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB Filmsuche</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Filmsuche</h1>
+            <p class="subtitle">Durchsuche Millionen von Filmen</p>
+        </header>
+
+        <div class="search-container">
+            <div class="search-box">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Film suchen..." 
+                    autocomplete="off"
+                >
+            </div>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Suche läuft...</p>
+        </div>
+
+        <div id="results" class="results"></div>
+
+        <div id="noResults" class="no-results hidden">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <p>Keine Filme gefunden</p>
+            <small>Versuche es mit einem anderen Suchbegriff</small>
+        </div>
+
+        <div id="welcome" class="welcome">
+            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                <polyline points="17 2 12 7 7 2"></polyline>
+            </svg>
+            <h2>Willkommen!</h2>
+            <p>Suche nach deinen Lieblingsfilmen</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
