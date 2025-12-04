@@ -527,6 +527,11 @@ header h1 {
         max-width: 100vw;
         overflow-x: hidden;
     }
+    
+    .detail-backdrop {
+        height: 250px;
+        margin-top: 0;
+    }
 }
 
 /* Smooth Scroll */
@@ -847,10 +852,15 @@ html {
 }
 
 .detail-backdrop {
-    width: calc(100% + 40px);
+    width: 100vw;
     height: 300px;
     position: relative;
-    margin: -20px -20px 20px -20px;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    margin-top: -20px;
+    margin-bottom: 20px;
     overflow: hidden;
 }
 
@@ -858,6 +868,7 @@ html {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
 }
 
 .detail-backdrop::after {
