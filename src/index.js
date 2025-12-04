@@ -3,6 +3,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { Telegraf, Markup } from 'telegraf';
+import session from 'express-session';
+import { initializeDatabase, getUserByUsername, upsertUser, logRequest, decreaseUserCredits, getUserRequestLogs, logLoginAttempt, resetMonthlyCredits } from './database.js';
+import { authenticateWithExternalAPI, requireAuth, requireCredits, formatExpDate, isAccountExpired } from './auth.js';
 
 dotenv.config();
 
@@ -20,15 +23,177 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// Initialize database
+await initializeDatabase();
+
+// Reset monthly credits check (run daily)
+setInterval(async () => {
+  await resetMonthlyCredits();
+}, 24 * 60 * 60 * 1000); // Every 24 hours
+
 // Middleware
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  }
+}));
+
+// ==================== AUTH ENDPOINTS ====================
+
+// Login endpoint
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+  const ipAddress = req.ip || req.connection.remoteAddress;
+  
+  if (!username || !password) {
+    return res.status(400).json({ success: false, error: 'Username and password required' });
+  }
+  
+  try {
+    // Authenticate with external API
+    const authResult = await authenticateWithExternalAPI(username, password);
+    
+    if (!authResult.success) {
+      await logLoginAttempt(username, ipAddress, false);
+      return res.status(401).json({ success: false, error: authResult.error });
+    }
+    
+    // Check or create user in database
+    let user = await getUserByUsername(username);
+    
+    if (!user) {
+      // Create new user
+      await upsertUser({
+        username: authResult.userInfo.username,
+        password: authResult.userInfo.password,
+        exp_date: authResult.userInfo.exp_date,
+        status: authResult.userInfo.status,
+        role: 'user' // Default role
+      });
+      user = await getUserByUsername(username);
+    } else {
+      // Update existing user
+      await upsertUser({
+        username: authResult.userInfo.username,
+        password: authResult.userInfo.password,
+        exp_date: authResult.userInfo.exp_date,
+        status: authResult.userInfo.status,
+        role: user.role // Keep existing role
+      });
+      user = await getUserByUsername(username);
+    }
+    
+    // Log successful login
+    await logLoginAttempt(username, ipAddress, true);
+    
+    // Create session
+    req.session.userId = user.id;
+    req.session.username = user.username;
+    req.session.user = {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      request_credits: user.request_credits,
+      credits_reset_date: user.credits_reset_date,
+      exp_date: user.exp_date,
+      telegram_name: user.telegram_name
+    };
+    
+    res.json({
+      success: true,
+      user: {
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        request_credits: user.request_credits,
+        credits_reset_date: user.credits_reset_date,
+        exp_date: user.exp_date,
+        exp_date_formatted: formatExpDate(user.exp_date)
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ success: false, error: 'Login failed' });
+  }
+});
+
+// Logout endpoint
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ success: false, error: 'Logout failed' });
+    }
+    res.json({ success: true });
+  });
+});
+
+// Get current user info
+app.get('/api/auth/me', requireAuth, async (req, res) => {
+  try {
+    const user = await getUserByUsername(req.session.username);
+    
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    // Check if account is expired
+    if (isAccountExpired(user.exp_date)) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Account expired',
+        expired: true
+      });
+    }
+    
+    res.json({
+      success: true,
+      user: {
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        request_credits: user.request_credits,
+        credits_reset_date: user.credits_reset_date,
+        exp_date: user.exp_date,
+        exp_date_formatted: formatExpDate(user.exp_date),
+        telegram_name: user.telegram_name,
+        telegram_user_id: user.telegram_user_id
+      }
+    });
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get user info' });
+  }
+});
+
+// Get user request logs
+app.get('/api/auth/logs', requireAuth, async (req, res) => {
+  try {
+    const logs = await getUserRequestLogs(req.session.userId);
+    res.json({ success: true, logs });
+  } catch (error) {
+    console.error('Get logs error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get logs' });
+  }
+});
+
+// ==================== PUBLIC ENDPOINTS ====================
 
 // API endpoint to get config (for frontend)
 app.get('/api/config', (req, res) => {
   res.json({
     tmdbApiKey: process.env.TMDB_API_KEY,
-    jellyseerrUrl: process.env.JELLYSEERR_URL
+    jellyseerrUrl: process.env.JELLYSEERR_URL,
+    requiresAuth: true
   });
 });
 
@@ -121,9 +286,12 @@ app.get('/api/jellyseerr/check/:mediaType/:tmdbId', async (req, res) => {
   }
 });
 
-// API endpoint to request media in Jellyseerr
-app.post('/api/jellyseerr/request', async (req, res) => {
+// API endpoint to request media in Jellyseerr (with auth and credits)
+app.post('/api/jellyseerr/request', requireAuth, requireCredits, async (req, res) => {
   const { mediaType, tmdbId, title } = req.body;
+  const user = req.session.user;
+  const ipAddress = req.ip || req.connection.remoteAddress;
+  const userAgent = req.get('user-agent');
   
   if (!process.env.JELLYSEERR_URL || !process.env.JELLYSEERR_API_KEY) {
     return res.status(500).json({ success: false, error: 'Jellyseerr not configured' });
@@ -145,7 +313,8 @@ app.post('/api/jellyseerr/request', async (req, res) => {
     console.log('Jellyseerr Request:', {
       url: `${process.env.JELLYSEERR_URL}/api/v1/request`,
       payload,
-      title
+      title,
+      user: user.username
     });
     
     const response = await fetch(
@@ -169,7 +338,31 @@ app.post('/api/jellyseerr/request', async (req, res) => {
     
     if (response.ok) {
       const data = JSON.parse(responseText);
-      res.json({ success: true, data });
+      
+      // Decrease user credits (unless admin)
+      if (user.role !== 'admin') {
+        await decreaseUserCredits(user.id);
+        // Update session
+        req.session.user.request_credits = user.request_credits - 1;
+      }
+      
+      // Log successful request
+      await logRequest({
+        user_id: user.id,
+        username: user.username,
+        media_type: mediaType,
+        tmdb_id: parseInt(tmdbId),
+        media_title: title,
+        request_status: 'success',
+        ip_address: ipAddress,
+        user_agent: userAgent
+      });
+      
+      res.json({ 
+        success: true, 
+        data,
+        creditsRemaining: user.role === 'admin' ? 999999 : user.request_credits - 1
+      });
     } else {
       let errorMessage = responseText;
       try {
@@ -178,10 +371,37 @@ app.post('/api/jellyseerr/request', async (req, res) => {
       } catch (e) {
         // Response is not JSON
       }
+      
+      // Log failed request
+      await logRequest({
+        user_id: user.id,
+        username: user.username,
+        media_type: mediaType,
+        tmdb_id: parseInt(tmdbId),
+        media_title: title,
+        request_status: 'failed',
+        error_message: errorMessage,
+        ip_address: ipAddress,
+        user_agent: userAgent
+      });
+      
       console.error('Jellyseerr request failed:', errorMessage);
       res.status(response.status).json({ success: false, error: errorMessage });
     }
   } catch (error) {
+    // Log error
+    await logRequest({
+      user_id: user.id,
+      username: user.username,
+      media_type: mediaType,
+      tmdb_id: parseInt(tmdbId),
+      media_title: title,
+      request_status: 'failed',
+      error_message: error.message,
+      ip_address: ipAddress,
+      user_agent: userAgent
+    });
+    
     console.error('Jellyseerr request error:', error);
     res.status(500).json({ success: false, error: error.message });
   }

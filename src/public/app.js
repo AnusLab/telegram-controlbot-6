@@ -10,11 +10,15 @@ let tmdbApiKey = '';
 let currentMediaType = 'all';
 let currentView = 'home';
 let searchTimeout = null;
+let currentUser = null;
+let isAuthenticated = false;
 
 // DOM Elemente
 const homeView = document.getElementById('homeView');
 const searchView = document.getElementById('searchView');
 const detailView = document.getElementById('detailView');
+const loginView = document.getElementById('loginView');
+const accountView = document.getElementById('accountView');
 const bottomNav = document.getElementById('bottomNav');
 
 // API Key laden
@@ -29,12 +33,142 @@ async function loadConfig() {
     }
 }
 
+// ==================== AUTH FUNCTIONS ====================
+
+// Check authentication on load
+async function checkAuth() {
+    try {
+        const response = await fetch('/api/auth/me');
+        const data = await response.json();
+        
+        if (data.success) {
+            currentUser = data.user;
+            isAuthenticated = true;
+            showView('home');
+            bottomNav.classList.remove('hidden');
+            loadTrending(currentMediaType);
+        } else {
+            showView('login');
+            bottomNav.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        showView('login');
+        bottomNav.classList.add('hidden');
+    }
+}
+
+// Login form handler
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    
+    submitButton.disabled = true;
+    submitButton.querySelector('.button-text').textContent = 'Anmeldung läuft...';
+    errorDiv.classList.add('hidden');
+    
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentUser = data.user;
+            isAuthenticated = true;
+            showView('home');
+            bottomNav.classList.remove('hidden');
+            loadTrending(currentMediaType);
+        } else {
+            errorDiv.textContent = data.error || 'Login fehlgeschlagen';
+            errorDiv.classList.remove('hidden');
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Verbindungsfehler. Bitte versuche es erneut.';
+        errorDiv.classList.remove('hidden');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.querySelector('.button-text').textContent = 'Anmelden';
+    }
+});
+
+// Logout function
+async function logout() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        currentUser = null;
+        isAuthenticated = false;
+        showView('login');
+        bottomNav.classList.add('hidden');
+    } catch (error) {
+        console.error('Logout failed:', error);
+    }
+}
+
+// Load account view
+async function loadAccountView() {
+    try {
+        // Load user info
+        const userResponse = await fetch('/api/auth/me');
+        const userData = await userResponse.json();
+        
+        if (userData.success) {
+            const user = userData.user;
+            document.getElementById('accountUsername').textContent = user.username;
+            document.getElementById('accountRole').textContent = user.role;
+            document.getElementById('accountRole').className = `role-badge ${user.role}`;
+            document.getElementById('accountExpDate').textContent = user.exp_date_formatted;
+            document.getElementById('accountCredits').textContent = user.role === 'admin' ? '∞' : user.request_credits;
+            document.getElementById('accountResetDate').textContent = new Date(user.credits_reset_date).toLocaleDateString('de-DE');
+        }
+        
+        // Load logs
+        const logsResponse = await fetch('/api/auth/logs');
+        const logsData = await logsResponse.json();
+        
+        const logsList = document.getElementById('accountLogsList');
+        
+        if (logsData.success && logsData.logs.length > 0) {
+            logsList.innerHTML = logsData.logs.map(log => `
+                <div class="log-item">
+                    <div class="log-info">
+                        <div class="log-title">${log.media_title || 'Unknown'}</div>
+                        <div class="log-meta">
+                            ${log.media_type === 'movie' ? 'Film' : 'Serie'} • 
+                            ${new Date(log.created_at).toLocaleString('de-DE')}
+                        </div>
+                    </div>
+                    <span class="log-status ${log.request_status}">${log.request_status}</span>
+                </div>
+            `).join('');
+        } else {
+            logsList.innerHTML = '<div class="empty-state"><p>Keine Anfragen vorhanden</p></div>';
+        }
+    } catch (error) {
+        console.error('Failed to load account:', error);
+    }
+}
+
+// ==================== CONFIG & INIT ====================
+
+loadConfig();
+checkAuth();
+
 // View Management
 window.showView = function(view) {
     // Hide all views
     homeView.classList.add('hidden');
     searchView.classList.add('hidden');
     detailView.classList.add('hidden');
+    loginView.classList.add('hidden');
+    accountView.classList.add('hidden');
     
     // Update nav
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -44,13 +178,21 @@ window.showView = function(view) {
     // Show selected view
     if (view === 'home') {
         homeView.classList.remove('hidden');
-        document.querySelector('.nav-item[onclick*="home"]').classList.add('active');
+        document.querySelector('.nav-item[onclick*="home"]')?.classList.add('active');
         currentView = 'home';
     } else if (view === 'search') {
         searchView.classList.remove('hidden');
-        document.querySelector('.nav-item[onclick*="search"]').classList.add('active');
+        document.querySelector('.nav-item[onclick*="search"]')?.classList.add('active');
         document.getElementById('searchEmpty').classList.remove('hidden');
         currentView = 'search';
+    } else if (view === 'login') {
+        loginView.classList.remove('hidden');
+        currentView = 'login';
+    } else if (view === 'account') {
+        accountView.classList.remove('hidden');
+        document.querySelector('.nav-item[onclick*="account"]')?.classList.add('active');
+        loadAccountView();
+        currentView = 'account';
     }
 };
 
