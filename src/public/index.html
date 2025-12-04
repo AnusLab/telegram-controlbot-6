@@ -3,53 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Media Suche</title>
+    <title>Media Library</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+    <!-- Bottom Navigation -->
+    <nav id="bottomNav" class="bottom-nav hidden">
+        <button class="nav-item active" onclick="showView('home')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>Home</span>
+        </button>
+        <button class="nav-item" onclick="showView('search')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <span>Suche</span>
+        </button>
+    </nav>
+
     <div class="container">
-        <!-- Media Type Selection -->
-        <div id="mediaTypeSelection" class="media-type-selection">
-            <header>
-                <h1>🎬 Media Suche</h1>
-                <p class="subtitle">Was möchtest du suchen?</p>
+        <!-- Home View (Trending) -->
+        <div id="homeView" class="view">
+            <header class="view-header">
+                <h1 id="homeTitle">🎬 Media Library</h1>
+                <div class="tab-switcher">
+                    <button class="tab active" onclick="switchTab('movie')">Filme</button>
+                    <button class="tab" onclick="switchTab('tv')">Serien</button>
+                    <button class="tab" onclick="switchTab('all')">Alle</button>
+                </div>
             </header>
-            
-            <div class="type-buttons">
-                <button class="type-button" onclick="selectMediaType('movie')">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                        <polyline points="17 2 12 7 7 2"></polyline>
-                    </svg>
-                    <h2>Filme</h2>
-                    <p>Durchsuche Filme</p>
-                </button>
-                
-                <button class="type-button" onclick="selectMediaType('tv')">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                        <line x1="17" y1="2" x2="17" y2="7"></line>
-                        <line x1="7" y1="2" x2="7" y2="7"></line>
-                    </svg>
-                    <h2>Serien</h2>
-                    <p>Durchsuche TV-Serien</p>
-                </button>
+
+            <div id="trendingLoading" class="loading">
+                <div class="spinner"></div>
+                <p>Lade Trending...</p>
             </div>
+
+            <div id="trendingGrid" class="trending-grid"></div>
         </div>
 
         <!-- Search View -->
-        <div id="searchView" class="search-view hidden">
-            <header>
-                <button class="back-button" onclick="backToSelection()">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg>
-                </button>
-                <div>
-                    <h1 id="searchTitle">🎬 Filme</h1>
-                    <p class="subtitle" id="searchSubtitle">Durchsuche Millionen von Filmen</p>
-                </div>
+        <div id="searchView" class="view hidden">
+            <header class="view-header">
+                <h1 id="searchTitle">🔍 Suche</h1>
             </header>
 
             <div class="search-container">
@@ -61,36 +61,47 @@
                     <input 
                         type="text" 
                         id="searchInput" 
-                        placeholder="Suchen..." 
+                        placeholder="Filme oder Serien suchen..." 
                         autocomplete="off"
                     >
                 </div>
             </div>
 
-        <div id="loading" class="loading hidden">
-            <div class="spinner"></div>
-            <p>Suche läuft...</p>
-        </div>
-
-        <div id="results" class="results"></div>
-
-        <div id="noResults" class="no-results hidden">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.35-4.35"></path>
-            </svg>
-            <p>Keine Filme gefunden</p>
-            <small>Versuche es mit einem anderen Suchbegriff</small>
-        </div>
-
-            <div id="welcome" class="welcome">
-                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                    <polyline points="17 2 12 7 7 2"></polyline>
-                </svg>
-                <h2>Willkommen!</h2>
-                <p id="welcomeText">Suche nach deinen Lieblingsfilmen</p>
+            <div id="searchLoading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Suche läuft...</p>
             </div>
+
+            <div id="searchResults" class="trending-grid"></div>
+
+            <div id="searchEmpty" class="empty-state hidden">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <h2>Suche starten</h2>
+                <p>Gib einen Film- oder Serientitel ein</p>
+            </div>
+
+            <div id="noResults" class="empty-state hidden">
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <h2>Keine Ergebnisse</h2>
+                <p>Versuche es mit einem anderen Suchbegriff</p>
+            </div>
+        </div>
+
+        <!-- Detail View -->
+        <div id="detailView" class="view hidden">
+            <button class="back-button-detail" onclick="closeDetail()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            
+            <div id="detailContent" class="detail-content"></div>
         </div>
     </div>
 

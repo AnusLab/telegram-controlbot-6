@@ -32,6 +32,60 @@ app.get('/api/config', (req, res) => {
   });
 });
 
+// API endpoint to get trending media
+app.get('/api/trending/:mediaType/:timeWindow', async (req, res) => {
+  const { mediaType, timeWindow } = req.params;
+  
+  try {
+    const response = await fetch(
+      `https://api.themoviedb.org/3/trending/${mediaType}/${timeWindow}?language=de-DE`,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.TMDB_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      res.json(data);
+    } else {
+      res.status(response.status).json({ error: 'Failed to fetch trending' });
+    }
+  } catch (error) {
+    console.error('Trending fetch error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// API endpoint to get media details
+app.get('/api/details/:mediaType/:tmdbId', async (req, res) => {
+  const { mediaType, tmdbId } = req.params;
+  
+  try {
+    const response = await fetch(
+      `https://api.themoviedb.org/3/${mediaType}/${tmdbId}?language=de-DE&append_to_response=credits,videos`,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.TMDB_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      res.json(data);
+    } else {
+      res.status(response.status).json({ error: 'Failed to fetch details' });
+    }
+  } catch (error) {
+    console.error('Details fetch error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // API endpoint to check media availability in Jellyseerr
 app.get('/api/jellyseerr/check/:mediaType/:tmdbId', async (req, res) => {
   const { mediaType, tmdbId } = req.params;
