@@ -315,6 +315,10 @@ header h1 {
     position: relative;
     overflow: hidden;
     box-shadow: 0 4px 16px var(--accent-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .request-button::before {
@@ -363,6 +367,30 @@ header h1 {
 
 .request-button.requested:hover {
     box-shadow: 0 8px 24px var(--warning-glow);
+}
+
+/* Request Notice */
+.request-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    margin-top: 12px;
+    margin-bottom: 20px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.request-notice svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--warning-color);
 }
 
 .availability-badge {
@@ -565,6 +593,8 @@ html {
 
 .view-header {
     margin-bottom: 24px;
+    display: flex;
+    justify-content: center;
 }
 
 .view-header h1 {
@@ -669,23 +699,32 @@ html {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 2px solid;
-    font-size: 16px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.availability-indicator.loading {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-secondary);
 }
 
 .availability-indicator.available {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.25);
     border-color: var(--success-color);
+    color: var(--success-color);
 }
 
 .availability-indicator.requested {
-    background: rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.25);
     border-color: var(--warning-color);
+    color: var(--warning-color);
 }
 
 .availability-indicator.not-available {
-    background: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.25);
     border-color: var(--error-color);
+    color: var(--error-color);
 }
 
 .media-card-info {
@@ -741,7 +780,7 @@ html {
 }
 
 .detail-backdrop {
-    width: 100%;
+    width: calc(100% + 40px);
     height: 300px;
     position: relative;
     margin: -20px -20px 20px -20px;
@@ -805,12 +844,26 @@ html {
     color: var(--text-secondary);
 }
 
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.meta-item svg {
+    flex-shrink: 0;
+}
+
 .detail-rating {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     color: var(--accent-color);
     font-weight: 600;
+}
+
+.detail-rating svg {
+    flex-shrink: 0;
 }
 
 .detail-section {
@@ -821,6 +874,7 @@ html {
     border-radius: 16px;
     padding: 20px;
     margin-bottom: 16px;
+    margin-top: 20px;
 }
 
 .detail-section h3 {

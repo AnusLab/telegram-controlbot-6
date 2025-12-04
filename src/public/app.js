@@ -131,8 +131,10 @@ function createMediaCard(item, mediaType) {
                 ? `<img src="${posterUrl}" alt="${title}" loading="lazy">` 
                 : '<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: auto;"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect><polyline points="17 2 12 7 7 2"></polyline></svg>'
             }
-            <div class="availability-indicator" data-tmdb-id="${item.id}" data-media-type="${mediaType}">
-                <span>⏳</span>
+            <div class="availability-indicator loading" data-tmdb-id="${item.id}" data-media-type="${mediaType}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                </svg>
             </div>
         </div>
         <div class="media-card-info">
@@ -157,13 +159,27 @@ async function checkAvailabilityForCard(tmdbId, mediaType, card) {
         
         if (data.available) {
             indicator.className = 'availability-indicator available';
-            indicator.innerHTML = '<span>✅</span>';
+            indicator.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            `;
         } else if (data.requested) {
             indicator.className = 'availability-indicator requested';
-            indicator.innerHTML = '<span>⏳</span>';
+            indicator.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            `;
         } else {
             indicator.className = 'availability-indicator not-available';
-            indicator.innerHTML = '<span>❌</span>';
+            indicator.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            `;
         }
     } catch (error) {
         console.error('Fehler bei Verfügbarkeitsprüfung:', error);
@@ -207,14 +223,68 @@ async function showDetail(tmdbId, mediaType) {
         let requestButton = '';
         
         if (availData.available) {
-            availabilityBadge = '<div class="availability-badge available">✅ Verfügbar</div>';
-            requestButton = '<button class="request-button available" disabled><span class="button-text">✅ Bereits verfügbar</span></button>';
+            availabilityBadge = `
+                <div class="availability-badge available">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Verfügbar</span>
+                </div>
+            `;
+            requestButton = `
+                <button class="request-button available" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span class="button-text">Bereits verfügbar</span>
+                </button>
+            `;
         } else if (availData.requested) {
-            availabilityBadge = '<div class="availability-badge requested">⏳ Angefragt</div>';
-            requestButton = '<button class="request-button requested" disabled><span class="button-text">⏳ Bereits angefragt</span></button>';
+            availabilityBadge = `
+                <div class="availability-badge requested">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Angefragt</span>
+                </div>
+            `;
+            requestButton = `
+                <button class="request-button requested" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="button-text">Bereits angefragt</span>
+                </button>
+                <div class="request-notice">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4M12 8h.01"></path>
+                    </svg>
+                    <span>Wir fügen diesen Inhalt hinzu, sobald er für uns verfügbar ist. Unser System überprüft regelmäßig die Verfügbarkeit.</span>
+                </div>
+            `;
         } else {
-            availabilityBadge = '<div class="availability-badge not-available">❌ Nicht verfügbar</div>';
-            requestButton = `<button class="request-button" onclick="requestMediaFromDetail(${tmdbId}, '${mediaType}', '${title.replace(/'/g, "\\'")}')"><span class="button-text">📥 ${mediaType === 'movie' ? 'Film' : 'Serie'} anfragen</span></button>`;
+            availabilityBadge = `
+                <div class="availability-badge not-available">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    <span>Nicht verfügbar</span>
+                </div>
+            `;
+            requestButton = `
+                <button class="request-button" onclick="requestMediaFromDetail(${tmdbId}, '${mediaType}', '${title.replace(/'/g, "\\'")}')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span class="button-text">${mediaType === 'movie' ? 'Film' : 'Serie'} anfragen</span>
+                </button>
+            `;
         }
         
         // Cast
@@ -254,9 +324,32 @@ async function showDetail(tmdbId, mediaType) {
                 <div class="detail-info">
                     <h2 class="detail-title">${title}</h2>
                     <div class="detail-meta">
-                        ${year ? `<span>📅 ${year}</span>` : ''}
-                        ${runtime ? `<span>⏱️ ${runtime} Min</span>` : ''}
-                        <span class="detail-rating">⭐ ${rating}</span>
+                        ${year ? `
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                ${year}
+                            </span>
+                        ` : ''}
+                        ${runtime ? `
+                            <span class="meta-item">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                                ${runtime} Min
+                            </span>
+                        ` : ''}
+                        <span class="detail-rating">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            ${rating}
+                        </span>
                     </div>
                     ${genres ? `<div style="color: var(--text-secondary); margin-bottom: 12px;">${genres}</div>` : ''}
                     ${availabilityBadge}
@@ -267,14 +360,28 @@ async function showDetail(tmdbId, mediaType) {
             
             ${data.overview ? `
                 <div class="detail-section">
-                    <h3>📖 Beschreibung</h3>
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        Beschreibung
+                    </h3>
                     <div class="detail-overview">${data.overview}</div>
                 </div>
             ` : ''}
             
             ${cast.length > 0 ? `
                 <div class="detail-section">
-                    <h3>🎭 Besetzung</h3>
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Besetzung
+                    </h3>
                     <div class="cast-grid">${castHTML}</div>
                 </div>
             ` : ''}
@@ -323,14 +430,25 @@ window.requestMediaFromDetail = async function(tmdbId, mediaType, title) {
         
         if (data.success) {
             button.className = 'request-button requested';
-            buttonText.textContent = '✅ Erfolgreich angefragt!';
+            button.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span class="button-text">Erfolgreich angefragt!</span>
+            `;
             
             if (tg) {
                 tg.showAlert(`"${title}" wurde erfolgreich angefragt!`);
             }
             
             setTimeout(() => {
-                buttonText.textContent = '⏳ Bereits angefragt';
+                button.innerHTML = `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="button-text">Bereits angefragt</span>
+                `;
             }, 2000);
         } else {
             throw new Error(data.error || 'Anfrage fehlgeschlagen');
