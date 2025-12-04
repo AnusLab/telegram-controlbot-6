@@ -130,6 +130,24 @@ app.post('/api/jellyseerr/request', async (req, res) => {
   }
   
   try {
+    // According to Overseerr API docs, the payload structure is:
+    // { mediaType: "movie" | "tv", mediaId: number, seasons?: number[] }
+    const payload = {
+      mediaType: mediaType === 'movie' ? 'movie' : 'tv',
+      mediaId: parseInt(tmdbId)
+    };
+    
+    // For TV shows, request all seasons by default
+    if (mediaType === 'tv') {
+      payload.seasons = 'all';
+    }
+    
+    console.log('Jellyseerr Request:', {
+      url: `${process.env.JELLYSEERR_URL}/api/v1/request`,
+      payload,
+      title
+    });
+    
     const response = await fetch(
       `${process.env.JELLYSEERR_URL}/api/v1/request`,
       {
@@ -138,19 +156,30 @@ app.post('/api/jellyseerr/request', async (req, res) => {
           'Content-Type': 'application/json',
           'X-Api-Key': process.env.JELLYSEERR_API_KEY
         },
-        body: JSON.stringify({
-          mediaType: mediaType === 'movie' ? 'movie' : 'tv',
-          mediaId: parseInt(tmdbId)
-        })
+        body: JSON.stringify(payload)
       }
     );
     
+    const responseText = await response.text();
+    console.log('Jellyseerr Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: responseText
+    });
+    
     if (response.ok) {
-      const data = await response.json();
+      const data = JSON.parse(responseText);
       res.json({ success: true, data });
     } else {
-      const error = await response.text();
-      res.status(response.status).json({ success: false, error });
+      let errorMessage = responseText;
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.message || errorData.error || responseText;
+      } catch (e) {
+        // Response is not JSON
+      }
+      console.error('Jellyseerr request failed:', errorMessage);
+      res.status(response.status).json({ success: false, error: errorMessage });
     }
   } catch (error) {
     console.error('Jellyseerr request error:', error);
